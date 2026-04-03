@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: FAANG Job Hunter - EC2 + DynamoDB + EventBridge auto-refresh
+
+Parameters:
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of your EC2 key pair for SSH access
+  AnthropicApiKey:
+    Type: String
+    NoEcho: true
+    Description: Your Anthropic API key
+  AdzunaAppId:
+    Type: String
+    Description: Your Adzuna App ID (optional)
+    Default: ""
+  AdzunaApiKey:
+    Type: String
+    NoEcho: true
+    Description: Your Adzuna API Key (optional)
+    Default: ""
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small, t3.medium]
+
+Resources:
+  # DynamoDB table for job storage (persistent, survives restarts)
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: job-hunter-jobs
+      BillingMode: PAY_PER_REQUEST  # no cost when idle
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true  # auto-delete jobs older than 7 days
+
+  # IAM role for EC2
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: faang-job-hunter-ec2-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:BatchWriteItem
+                Resource: !GetAtt JobsTable.Arn
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref EC2Role]
+
+  # Security group
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: FAANG Job Hunter
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0  # restrict to your IP in production
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+
+  # EC2 instance
+  AppServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SecurityGroupIds:
+        - !Ref AppSecurityGroup
+      ImageId: ami-0c7217cdde317cfec  # Ubuntu 22.04 us-east-1 (update per region)
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install -y docker.io python3-pip git curl
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ubuntu
+
+          # Write env file
+          cat > /app/.env << 'ENV'
+          LLM_PROVIDER=anthropic
+          ANTHROPIC_API_KEY=${AnthropicApiKey}
+          ADZUNA_APP_ID=${AdzunaAppId}
+          ADZUNA_API_KEY=${AdzunaApiKey}
+          USE_DYNAMODB=true
+          DYNAMODB_TABLE=job-hunter-jobs
+          AWS_REGION=${AWS::Region}
+          ENV
+
+          # Auto-refresh every 30 minutes via cron
+          (crontab -l 2>/dev/null; echo "*/30 * * * * curl -s -X POST http://localhost:8000/api/jobs/refresh > /var/log/job-refresh.log 2>&1") | crontab -
+
+          echo "Ready. Deploy your Docker image to /app and run it." > /home/ubuntu/READY.txt
+      Tags:
+        - Key: Name
+          Value: faang-job-hunter
+
+Outputs:
+  InstancePublicIP:
+    Description: Public IP of your job hunter server
+    Value: !GetAtt AppServer.PublicIp
+  DynamoDBTableName:
+    Description: DynamoDB table name
+    Value: !Ref JobsTable
+  AppURL:
+    Description: Your app URL
+    Value: !Sub "http://${AppServer.PublicIp}:8000"

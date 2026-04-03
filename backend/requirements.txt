@@ -1,0 +1,33 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+pydantic-settings==2.5.2
+httpx==0.27.2
+
+# LangChain core
+langchain==0.3.0
+langchain-core==0.3.0
+
+# LLM providers (install at least one)
+langchain-anthropic==0.2.0
+langchain-openai==0.2.0
+
+# LangSmith — tracing, monitoring, and debugging LangChain apps
+langsmith==0.1.147
+
+# Web scraping (for jobright.ai fetcher)
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# File uploads
+python-multipart==0.0.12
+
+# Resume parsing
+pdfplumber==0.11.4
+python-docx==1.1.2
+
+# AWS (for production S3 resume storage)
+boto3==1.35.0
+
+# Dev
+python-dotenv==1.0.1

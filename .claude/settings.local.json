@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://raw.githubusercontent.com/sravani150602/career-copilot-ai/main/lib/integrations-openai-ai-server/package.json\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/sravani150602/career-copilot-ai/main/artifacts/api-server/src/lib/logger.ts\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/sravani150602/career-copilot-ai/main/lib/db/src/schema/index.ts\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/sravani150602/career-copilot-ai/main/artifacts/api-server/src/routes/health.ts\")",
+      "Bash(curl -s https://api.github.com/repos/sravani150602/career-copilot-ai/issues)"
+    ]
+  }
+}
