@@ -3,6 +3,8 @@ import { useState } from 'react'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
+
 export default function Header({ status, onRefreshComplete, activeTab, onTabChange }) {
   const [refreshing, setRefreshing] = useState(false)
   const queryClient = useQueryClient()
@@ -10,7 +12,7 @@ export default function Header({ status, onRefreshComplete, activeTab, onTabChan
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await axios.post('/api/jobs/refresh/sync', null, { timeout: 120000 })
+      await axios.post(`${API_BASE}/api/jobs/refresh/sync`, null, { timeout: 120000 })
       await queryClient.invalidateQueries({ queryKey: ['jobs'] })
       await queryClient.invalidateQueries({ queryKey: ['status'] })
       if (onRefreshComplete) onRefreshComplete()

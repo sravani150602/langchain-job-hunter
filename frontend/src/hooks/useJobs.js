@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
 
+// Use Render backend in production, localhost in development
+const API_BASE = import.meta.env.VITE_API_URL || ''
+const api = axios.create({ baseURL: API_BASE })
+
 // ── Jobs ─────────────────────────────────────────────────────
 export function useJobs(filters) {
   const params = new URLSearchParams()
@@ -14,7 +18,7 @@ export function useJobs(filters) {
   return useQuery({
     queryKey: ['jobs', filters],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/jobs/?${params}`)
+      const { data } = await api.get(`/api/jobs/?${params}`)
       return data
     },
     refetchInterval: 1000 * 60 * 5,
@@ -25,7 +29,7 @@ export function useStatus() {
   return useQuery({
     queryKey: ['status'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/jobs/status')
+      const { data } = await api.get('/api/jobs/status')
       return data
     },
     refetchInterval: 1000 * 30,
@@ -37,7 +41,7 @@ export function useResume() {
   return useQuery({
     queryKey: ['resume'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/resume/')
+      const { data } = await api.get('/api/resume/')
       return data
     },
   })
@@ -49,7 +53,7 @@ export function useUploadResume() {
     mutationFn: async (file) => {
       const formData = new FormData()
       formData.append('file', file)
-      const { data } = await axios.post('/api/resume/upload', formData, {
+      const { data } = await api.post('/api/resume/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       return data
@@ -62,7 +66,7 @@ export function useAnalyzeJob(jobId, enabled = true) {
   return useQuery({
     queryKey: ['analyze', jobId],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/resume/analyze/${jobId}`)
+      const { data } = await api.get(`/api/resume/analyze/${jobId}`)
       return data
     },
     enabled: !!jobId && enabled,
@@ -74,7 +78,7 @@ export function useOptimizeResume(jobId) {
   return useQuery({
     queryKey: ['optimize', jobId],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/resume/optimize/${jobId}`)
+      const { data } = await api.get(`/api/resume/optimize/${jobId}`)
       return data
     },
     enabled: false,
@@ -86,7 +90,7 @@ export function useInterviewPrep(jobId) {
   return useQuery({
     queryKey: ['interview', jobId],
     queryFn: async () => {
-      const { data } = await axios.get(`/api/resume/interview/${jobId}`)
+      const { data } = await api.get(`/api/resume/interview/${jobId}`)
       return data
     },
     enabled: false,
@@ -99,7 +103,7 @@ export function useTracker() {
   return useQuery({
     queryKey: ['tracker'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/tracker/')
+      const { data } = await api.get('/api/tracker/')
       return data
     },
   })
@@ -109,7 +113,7 @@ export function useTrackerStats() {
   return useQuery({
     queryKey: ['trackerStats'],
     queryFn: async () => {
-      const { data } = await axios.get('/api/tracker/stats')
+      const { data } = await api.get('/api/tracker/stats')
       return data
     },
   })
@@ -119,7 +123,7 @@ export function useAddApplication() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (entry) => {
-      const { data } = await axios.post('/api/tracker/', entry)
+      const { data } = await api.post('/api/tracker/', entry)
       return data
     },
     onSuccess: () => {
@@ -133,7 +137,7 @@ export function useUpdateApplication() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...update }) => {
-      const { data } = await axios.patch(`/api/tracker/${id}`, update)
+      const { data } = await api.patch(`/api/tracker/${id}`, update)
       return data
     },
     onSuccess: () => {
@@ -147,7 +151,7 @@ export function useDeleteApplication() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id) => {
-      await axios.delete(`/api/tracker/${id}`)
+      await api.delete(`/api/tracker/${id}`)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tracker'] })
