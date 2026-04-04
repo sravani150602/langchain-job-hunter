@@ -18,7 +18,7 @@ export function useJobs(filters) {
   return useQuery({
     queryKey: ['jobs', filters],
     queryFn: async () => {
-      const { data } = await api.get(`/api/jobs/?${params}`)
+      const { data } = await api.get(`/api/jobs?${params}`)
       return data
     },
     refetchInterval: 1000 * 60 * 5,

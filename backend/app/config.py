@@ -22,7 +22,12 @@ class Settings(BaseSettings):
 
     # --- App ---
     app_name: str = "CareerCopilot AI"
-    cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: List[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://langchain-job-hunter.vercel.app",
+        "https://langchain-job-hunter-*.vercel.app",
+    ]
     job_refresh_interval_minutes: int = 30
 
     # jobright.ai max jobs per refresh (keep reasonable to not overload)
