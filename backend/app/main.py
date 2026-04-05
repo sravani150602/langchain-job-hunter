@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+import asyncio
 import logging
 import os
 
@@ -19,6 +20,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def _refresh_sample_jobs_loop():
+    """Reload sample jobs every 30 minutes so timestamps stay fresh."""
+    while True:
+        await asyncio.sleep(30 * 60)
+        sample = get_sample_jobs()
+        job_store.save_jobs(sample)
+        logger.info(f"Refreshed {len(sample)} sample jobs (timestamp reset)")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name}")
@@ -28,7 +38,10 @@ async def lifespan(app: FastAPI):
     sample = get_sample_jobs()
     job_store.save_jobs(sample)
     logger.info(f"Loaded {len(sample)} sample jobs for demo")
+    # Keep sample job timestamps fresh every 30 minutes
+    refresh_task = asyncio.create_task(_refresh_sample_jobs_loop())
     yield
+    refresh_task.cancel()
     logger.info("Shutting down")
 
 

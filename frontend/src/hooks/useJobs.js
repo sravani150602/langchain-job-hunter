@@ -58,7 +58,7 @@ export function useUploadResume() {
       })
       return data
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['resume'] }),
+    onSuccess: (data) => qc.setQueryData(['resume'], data),
   })
 }
 

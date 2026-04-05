@@ -11,7 +11,7 @@ import JobDetailModal from './components/JobDetailModal.jsx'
 import { useJobs, useStatus } from './hooks/useJobs.js'
 
 const DEFAULT_FILTERS = {
-  max_hours_ago: 48,
+  max_hours_ago: 168,
   job_type: '',
   priority_only: false,
   remote_only: false,

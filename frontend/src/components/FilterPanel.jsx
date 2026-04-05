@@ -75,7 +75,7 @@ export default function FilterPanel({ filters, onChange }) {
                 <option value={24}>Last 24 hours</option>
                 <option value={48}>Last 48 hours</option>
                 <option value={72}>Last 3 days</option>
-                <option value={168}>Last week</option>
+                <option value={168}>Last week (default)</option>
               </select>
             </div>
 
