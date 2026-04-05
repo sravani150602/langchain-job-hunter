@@ -9,6 +9,8 @@ from .config import settings
 from .routers.jobs import router as jobs_router
 from .routers.resume import router as resume_router
 from .routers.tracker import router as tracker_router
+from .sample_jobs import get_sample_jobs
+from .database import job_store
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,6 +24,10 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app_name}")
     logger.info(f"LLM Provider: {settings.llm_provider}")
     logger.info(f"Adzuna configured: {bool(settings.adzuna_app_id)}")
+    # Always pre-load sample jobs so demo works immediately
+    sample = get_sample_jobs()
+    job_store.save_jobs(sample)
+    logger.info(f"Loaded {len(sample)} sample jobs for demo")
     yield
     logger.info("Shutting down")
 
